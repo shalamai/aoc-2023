@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class Task1 {
+public class Solution {
     public static void main(String[] args) throws IOException {
         var res = part1();
         System.out.println(res);
