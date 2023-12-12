@@ -3,9 +3,7 @@ package day10;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Solution {
@@ -13,11 +11,14 @@ public class Solution {
     public static void main(String[] args) throws IOException {
         var res1 = part1("./src/day10/input.txt");
         System.out.println(res1);
+
+        var res2 = part2("./src/day10/input.txt");
+        System.out.println(res2);
     }
 
     static int part1(String path) throws IOException {
-        var start = start(path);
         var map = map(path);
+        var start = start(map);
         var neighbours = neighbours(map, start);
         if (neighbours.size() != 2) throw new Error("invalid neighbours");
 
@@ -43,10 +44,22 @@ public class Solution {
         return steps;
     }
 
-    static int[] start(String path) throws IOException {
-        var lines = Files.readAllLines(Path.of(path));
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines.get(i).contains("S")) return new int[]{i, lines.get(i).indexOf("S")};
+    static int part2(String path) throws IOException {
+        var map = map(path);
+        var scaled = scale(map);
+        var start = start(scaled);
+
+        markLoop(scaled, start);
+        markOutsideTiles(scaled);
+        expandLoopBorders(scaled);
+
+        return countInsideTiles(scaled) / 9;
+    }
+
+    static int[] start(char[][] map) {
+        for (int i = 0; i < map.length; i++) {
+            var line = String.valueOf(map[i]);
+            if (line.contains("S")) return new int[]{i, line.indexOf("S")};
         }
         return new int[]{};
     }
@@ -77,5 +90,105 @@ public class Solution {
                 .get();
 
         return res;
+    }
+
+    static char[][] scale(char[][] map) {
+        var map2 = mapWithDots(map.length * 3, map[0].length * 3);
+
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map[0].length; j++) {
+                var v = map[i][j];
+                setValIncr(map2, i * 3, j * 3, v);
+                if (List.of('S', '|', 'J', 'L').contains(v)) setValIncr(map2, i * 3 - 1, j * 3, '|');
+                if (List.of('S', '|', 'F', '7').contains(v)) setValIncr(map2, i * 3 + 1, j * 3, '|');
+                if (List.of('S', '-', 'J', '7').contains(v)) setValIncr(map2, i * 3, j * 3 - 1, '-');
+                if (List.of('S', '-', 'L', 'F').contains(v)) setValIncr(map2, i * 3, j * 3 + 1, '-');
+            }
+        }
+
+        return map2;
+    }
+
+    static void setVal(char[][] map, int i, int j, char v) {
+        if (i >= 0 && i < map.length && j >= 0 && j < map[0].length && map[i][j] != '1') map[i][j] = v;
+    }
+
+    static void setValIncr(char[][] map, int i, int j, char v) {
+        i++;
+        j++;
+        setVal(map, i, j, v);
+    }
+
+    static char[][] mapWithDots(int i, int j) {
+        var map = new char[i][j];
+        for (int k = 0; k < i; k++) {
+            var arr = new char[j];
+            Arrays.fill(arr, '.');
+            map[k] = arr;
+        }
+
+        return map;
+    }
+
+    static void markLoop(char[][] map, int[] start) {
+        var next = neighbours(map, start).stream()
+                .filter(n -> neighbours(map, n).stream().anyMatch(n2 -> !Arrays.equals(n2, start)))
+                .findFirst()
+                .get();
+
+        map[start[0]][start[1]] = '1';
+        while (true) {
+            var ns = neighbours(map, next);
+            map[next[0]][next[1]] = '1';
+            if (ns.isEmpty()) return;
+            next = ns.get(0);
+        }
+    }
+
+    static void markOutsideTiles(char[][] map) {
+        Queue<int[]> q = new LinkedList<>();
+        q.add(new int[]{0, 0});
+
+        while (!q.isEmpty()) {
+            var a = q.poll();
+            if (a[0] < 0 || a[0] >= map.length ||
+                    a[1] < 0 || a[1] >= map[0].length ||
+                    map[a[0]][a[1]] == '1' || map[a[0]][a[1]] == '2') continue;
+
+            map[a[0]][a[1]] = '2';
+
+            q.add(new int[]{a[0] + 1, a[1]});
+            q.add(new int[]{a[0] - 1, a[1]});
+            q.add(new int[]{a[0], a[1] - 1});
+            q.add(new int[]{a[0], a[1] + 1});
+        }
+    }
+
+    static void expandLoopBorders(char[][] map) {
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map[0].length; j++) {
+                if (map[i][j] == '1') {
+                    setVal(map, i + 1, j - 1, '2');
+                    setVal(map, i + 1, j, '2');
+                    setVal(map, i + 1, j + 1, '2');
+                    setVal(map, i - 1, j - 1, '2');
+                    setVal(map, i - 1, j, '2');
+                    setVal(map, i - 1, j + 1, '2');
+                    setVal(map, i, j - 1, '2');
+                    setVal(map, i, j + 1, '2');
+                }
+            }
+        }
+    }
+
+    static int countInsideTiles(char[][] map) {
+        int count = 0;
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map[0].length; j++) {
+                if (map[i][j] != '1' && map[i][j] != '2') count++;
+            }
+        }
+
+        return count;
     }
 }
