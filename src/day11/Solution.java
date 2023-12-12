@@ -14,7 +14,7 @@ public class Solution {
         System.out.println(res1);
     }
 
-    static int part1(String path) throws IOException {
+    static long part1(String path) throws IOException {
         var map = input(path);
 
         var expansions = expansions(map);
@@ -23,7 +23,7 @@ public class Solution {
 
         var galaxies = galaxies(map);
 
-        int acc = 0;
+        long acc = 0;
         int n = 1;
         for (var galaxy : galaxies) {
             for (var galaxy2 : galaxies.stream().skip(n++).collect(Collectors.toList())) {
@@ -73,17 +73,17 @@ public class Solution {
         return res;
     }
 
-    static int dist(int[] a, int[] b, Set<Integer> rows, Set<Integer> cols) {
+    static long dist(int[] a, int[] b, Set<Integer> rows, Set<Integer> cols) {
         var r0 = Math.min(a[0], b[0]);
         var r1 = Math.max(a[0], b[0]);
         var c0 = Math.min(a[1], b[1]);
         var c1 = Math.max(a[1], b[1]);
 
-        int acc = 0;
+        long acc = 0;
         acc += r1 - r0;
-        acc += rows.stream().filter(r -> r > r0 && r < r1).count();
+        acc += 999999 * rows.stream().filter(r -> r > r0 && r < r1).count();
         acc += c1 - c0;
-        acc += cols.stream().filter(c -> c > c0 && c < c1).count();
+        acc += 999999 * cols.stream().filter(c -> c > c0 && c < c1).count();
 
         return acc;
     }
