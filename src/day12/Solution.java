@@ -1,12 +1,9 @@
 package day12;
 
 import java.io.IOException;
-import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -15,6 +12,9 @@ public class Solution {
     public static void main(String[] args) throws IOException {
         var res1 = part1("./src/day12/input.txt");
         System.out.println(res1);
+
+        var res2 = part2("./src/day12/input.txt");
+        System.out.println(res2);
     }
 
     static int part1(String path) throws IOException {
@@ -23,7 +23,28 @@ public class Solution {
 
         int acc = 0;
         for (int i = 0; i < rs1.size(); i++) {
-            acc += solve(rs1.get(i), rs2.get(i), false);
+            acc += solve(rs1.get(i), 0, rs2.get(i), 0, false, new HashMap<>());
+        }
+
+        return acc;
+    }
+
+    static long part2(String path) throws IOException {
+        var rs1 = records1(path).stream()
+                .map(a -> (a + "?").repeat(5))
+                .map(a -> a.substring(0, a.length() - 1))
+                .collect(Collectors.toList());
+
+        var rs2 = records2(path).stream()
+                .map(as -> Collections.nCopies(5, as)
+                        .stream()
+                        .flatMap(List::stream)
+                        .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+
+        long acc = 0;
+        for (int i = 0; i < rs1.size(); i++) {
+            acc += solve(rs1.get(i), 0, rs2.get(i), 0, false, new HashMap<>());
         }
 
         return acc;
@@ -43,22 +64,30 @@ public class Solution {
                 .collect(Collectors.toList());
     }
 
-    static int solve(CharSequence r1, List<Integer> r2, boolean breakNeeded) {
-        if (r1.length() == 0) return r2.isEmpty() ? 1 : 0;
-        if (r2.isEmpty()) return Pattern.matches(".*#.*", r1) ? 0 : 1;
-        if (breakNeeded) return r1.charAt(0) == '#' ? 0 : solveDot(r1, r2);
-        if (r1.charAt(0) == '.') return solveDot(r1, r2);
-        if (r1.charAt(0) == '#') return solveHash(r1, r2);
-        return solveDot(r1, r2) + solveHash(r1, r2);
+    static long solveThroughCache(String r1, int r1Start, List<Integer> r2, int r2Start, boolean breakNeeded, Map<String, Long> cache) {
+        var key = r1Start + ":" + r2Start + ":" + breakNeeded;
+        if (cache.containsKey(key)) return cache.get(key);
+        var r = solve(r1, r1Start, r2, r2Start, breakNeeded, cache);
+        cache.put(key, r);
+        return r;
     }
 
-    static int solveDot(CharSequence r1, List<Integer> r2) {
-        return solve(CharBuffer.wrap(r1, 1, r1.length()), r2, false);
+    static long solve(String r1, int r1Start, List<Integer> r2, int r2Start, boolean breakNeeded, Map<String, Long> cache) {
+        if (r1Start == r1.length()) return r2Start == r2.size() ? 1 : 0;
+        if (r2Start == r2.size()) return r1.substring(r1Start).matches(".*#.*") ? 0 : 1;
+        if (breakNeeded) return r1.charAt(r1Start) == '#' ? 0 : solveDot(r1, r1Start, r2, r2Start, cache);
+        if (r1.charAt(r1Start) == '.') return solveDot(r1, r1Start, r2, r2Start, cache);
+        if (r1.charAt(r1Start) == '#') return solveHash(r1, r1Start, r2, r2Start, cache);
+        return solveDot(r1, r1Start, r2, r2Start, cache) + solveHash(r1, r1Start, r2, r2Start, cache);
     }
 
-    static int solveHash(CharSequence r1, List<Integer> r2) {
-        return Pattern.matches("^(#|\\?){" + r2.get(0) + "}.*", r1)
-                ? solve(CharBuffer.wrap(r1, r2.get(0), r1.length()), r2.subList(1, r2.size()), true)
+    static long solveDot(String r1, int r1Start, List<Integer> r2, int r2Start, Map<String, Long> cache) {
+        return solveThroughCache(r1, r1Start + 1, r2, r2Start, false, cache);
+    }
+
+    static long solveHash(String r1, int r1Start, List<Integer> r2, int r2Start, Map<String, Long> cache) {
+        return r1.substring(r1Start).matches("^(#|\\?){" + r2.get(r2Start) + "}.*")
+                ? solveThroughCache(r1, r1Start + r2.get(r2Start), r2, r2Start + 1, true, cache)
                 : 0;
     }
 }
