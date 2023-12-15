@@ -3,16 +3,16 @@ package day14;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.*;
 
 public class Solution {
 
     public static void main(String[] args) throws IOException {
-//        var res1 = part1("./src/day14/input0.txt");
-//        System.out.println(res1);
+        var res1 = part1("./src/day14/input0.txt");
+        System.out.println(res1);
 
-        var res2 = part2("./src/day14/input.txt");
+        var res2 = part2("./src/day14/input.txt", 1000_000_000);
         System.out.println(res2);
-        System.out.println((1000_000_000 - 143) % 39);
     }
 
     static int part1(String path) throws IOException {
@@ -21,14 +21,24 @@ public class Solution {
         return load(map);
     }
 
-    static int part2(String path) throws IOException {
+    static int part2(String path, int iterations) throws IOException {
         var map = input(path);
-        for (int i = 0; i < 300; i++) {
-            doCycle(map);
-            System.out.println(i + ": " + load(map));
-        }
 
-        return 0;
+        var states = new ArrayList<Integer>();
+        var loads = new ArrayList<Integer>();
+        while (true) {
+            doCycle(map);
+            var hash = Arrays.deepHashCode(map);
+            if (states.contains(hash)) {
+                var prefix = states.indexOf(hash);
+                var loopLength = states.size() - prefix;
+                var n = (iterations - prefix) % loopLength;
+                return loads.get(prefix + n - 1);
+            }
+
+            states.add(hash);
+            loads.add(load(map));
+        }
     }
 
     static char[][] input(String path) throws IOException {
