@@ -11,14 +11,37 @@ public class Solution {
     public static void main(String[] args) throws IOException {
         var res1 = part1("./src/day16/input.txt");
         System.out.println(res1);
+
+        var res2 = part2("./src/day16/input.txt");
+        System.out.println(res2);
     }
 
     static int part1(String path) throws IOException {
         var grid = input(path);
+        return solve(grid, new Beam(0, 0, '>'));
+    }
 
+    static int part2(String path) throws IOException {
+        var grid = input(path);
+
+        var starts = new ArrayList<Beam>();
+        for (int i = 0; i < grid.length; i++) {
+            starts.add(new Beam(i, 0, '>'));
+            starts.add(new Beam(i, grid[0].length - 1, '<'));
+        }
+
+        for (int j = 0; j < grid[0].length; j++) {
+            starts.add(new Beam(0, j, 'j'));
+            starts.add(new Beam(grid.length -1, j, 'i'));
+        }
+
+        return starts.stream().map(b -> solve(grid, b)).max(Integer::compareTo).get();
+    }
+
+    static int solve(char[][] grid, Beam start) {
         var beams = new HashSet<Beam>();
         Queue<Beam> q = new LinkedList<>();
-        q.add(new Beam(0, 0, '>'));
+        q.add(start);
 
         char[][] debug = new char[grid.length][grid[0].length];
         for (char[] row : debug) Arrays.fill(row, '.');
