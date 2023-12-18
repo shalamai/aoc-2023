@@ -7,10 +7,12 @@ import java.util.*;
 import java.util.stream.Stream;
 
 
-public class Solution {
+public class Solution2 {
 
     public static void main(String[] args) throws IOException {
+        var start = System.currentTimeMillis();
         var res1 = part1("./src/day17/input.txt");
+        System.out.println("done in " + (System.currentTimeMillis() - start));
         System.out.println(res1);
     }
 
