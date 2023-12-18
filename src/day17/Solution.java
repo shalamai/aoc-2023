@@ -30,7 +30,7 @@ public class Solution {
 
     static int part1(String path) throws IOException {
         var grid = input(path);
-        var costs = new ArrayList<List<Map<Integer, Cost>>>();
+        var costs = new ArrayList<List<Map<Direction, Integer>>>();
 
         for (int i = 0; i < grid.length; i++) {
             costs.add(new ArrayList<>());
@@ -41,25 +41,23 @@ public class Solution {
 
         Queue<Cell> q = new LinkedList<>();
 
-        q.add(new Cell(0, 0, FROM.left, 0, new ArrayList<>()));
-        var init = new Cost(FROM.left, 0, 0);
-        costs.get(0).get(0).put(init.hashCode(), init);
+        q.add(new Cell(0, 0, new Direction(FROM.left, 0), new ArrayList<>()));
+        costs.get(0).get(0).put(new Direction(FROM.left, 0), 0);
 
         while (!q.isEmpty()) {
             var cell = q.poll();
 
             for (Cell next : cell.neighbours(grid.length - 1, grid[0].length - 1)) {
-                var newCost = costs.get(cell.i).get(cell.j).get(new Cost(cell.from, cell.consecutive, 0).hashCode()).val + grid[next.i][next.j];
+                var newCost = costs.get(cell.i).get(cell.j).get(cell.dir) + grid[next.i][next.j];
 
-                if (costs.get(next.i).get(next.j).values().stream().filter(c -> c.from == next.from && c.consecutive <= next.consecutive && c.val <= newCost).findFirst().isEmpty()) {
-                    var nc = new Cost(next.from, next.consecutive, newCost);
-                    costs.get(next.i).get(next.j).put(nc.hashCode(), nc);
+                if (costs.get(next.i).get(next.j).entrySet().stream().filter(c -> c.getKey().from == next.dir.from && c.getKey().consecutive <= next.dir.consecutive && c.getValue() <= newCost).findFirst().isEmpty()) {
+                    costs.get(next.i).get(next.j).put(next.dir, newCost);
                     q.add(next);
                 }
             }
         }
 
-        return costs.get(costs.size() - 1).get(costs.get(0).size() - 1).values().stream().map(c -> c.val).min(Integer::compareTo).get();
+        return costs.get(costs.size() - 1).get(costs.get(0).size() - 1).values().stream().min(Integer::compareTo).get();
     }
 
     static int[][] input(String path) throws IOException {
@@ -69,7 +67,7 @@ public class Solution {
                 .toArray(int[][]::new);
     }
 
-    record Cell(int i, int j, FROM from, int consecutive, List<Cell> trail) {
+    record Cell(int i, int j, Direction dir, List<Cell> trail) {
         List<Cell> neighbours(int maxI, int maxJ) {
             return Stream.of(up(), down(maxI), left(), right(maxJ))
                     .filter(Optional::isPresent)
@@ -78,38 +76,38 @@ public class Solution {
         }
 
         Optional<Cell> up() {
-            if (i == 0 || from == FROM.top || (from == FROM.bottom && consecutive == 3)) return Optional.empty();
+            if (i == 0 || dir.from == FROM.top || (dir.from == FROM.bottom && dir.consecutive == 3)) return Optional.empty();
             else {
                 var as = new ArrayList<>(trail);
                 as.add(this);
-                return Optional.of(new Cell(i - 1, j, FROM.bottom, from == FROM.bottom ? consecutive + 1 : 1, as));
+                return Optional.of(new Cell(i - 1, j, new Direction(FROM.bottom, dir.from == FROM.bottom ? dir.consecutive + 1 : 1), as));
             }
         }
 
         Optional<Cell> down(int maxI) {
-            if (i == maxI || from == FROM.bottom || (from == FROM.top && consecutive == 3)) return Optional.empty();
+            if (i == maxI || dir.from == FROM.bottom || (dir.from == FROM.top && dir.consecutive == 3)) return Optional.empty();
             else {
                 var as = new ArrayList<>(trail);
                 as.add(this);
-                return Optional.of(new Cell(i + 1, j, FROM.top, from == FROM.top ? consecutive + 1 : 1, as));
+                return Optional.of(new Cell(i + 1, j, new Direction(FROM.top, dir.from == FROM.top ? dir.consecutive + 1 : 1), as));
             }
         }
 
         Optional<Cell> left() {
-            if (j == 0 || from == FROM.left || (from == FROM.right && consecutive == 3)) return Optional.empty();
+            if (j == 0 || dir.from == FROM.left || (dir.from == FROM.right && dir.consecutive == 3)) return Optional.empty();
             else {
                 var as = new ArrayList<>(trail);
                 as.add(this);
-                return Optional.of(new Cell(i, j - 1, FROM.right, from == FROM.right ? consecutive + 1 : 1, as));
+                return Optional.of(new Cell(i, j - 1, new Direction(FROM.right, dir.from == FROM.right ? dir.consecutive + 1 : 1), as));
             }
         }
 
         Optional<Cell> right(int maxJ) {
-            if (j == maxJ || from == FROM.right || (from == FROM.left && consecutive == 3)) return Optional.empty();
+            if (j == maxJ || dir.from == FROM.right || (dir.from == FROM.left && dir.consecutive == 3)) return Optional.empty();
             else {
                 var as = new ArrayList<>(trail);
                 as.add(this);
-                return Optional.of(new Cell(i, j + 1, FROM.left, from == FROM.left ? consecutive + 1 : 1, as));
+                return Optional.of(new Cell(i, j + 1, new Direction(FROM.left, dir.from == FROM.left ? dir.consecutive + 1 : 1), as));
             }
         }
 
@@ -118,26 +116,13 @@ public class Solution {
             return "Cell{" +
                     "i=" + i +
                     ", j=" + j +
-                    ", from=" + from +
-                    ", consecutive=" + consecutive +
+                    ", from=" + dir.from +
+                    ", consecutive=" + dir.consecutive +
                     '}';
         }
     }
 
-    record Cost(FROM from, int consecutive, int val) {
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Cost cost = (Cost) o;
-            return consecutive == cost.consecutive && from == cost.from;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(from, consecutive);
-        }
+    record Direction(FROM from, int consecutive) {
     }
 
     enum FROM {
