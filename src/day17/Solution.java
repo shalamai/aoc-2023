@@ -6,15 +6,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
-// refactor this shit
-// skip if there is a cost with less value and less-or-equal conseq
-// try to improve performance
-// - before refactor: 3723529 ops, 9527 ms
-// - after: 2110969 ops, 4759 ms
-// use Cell(with val) instead of Cost
-// hide costs array inside data structure. Cell has all fields needed to work with it
-// rm trail
-
 // code 2 part
 // - adjust cell.next(min 4, max 10)
 // - res filter (conseq >= 4)
