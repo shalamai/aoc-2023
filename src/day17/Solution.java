@@ -41,7 +41,7 @@ public class Solution {
 
         Queue<Cell> q = new LinkedList<>();
 
-        q.add(new Cell(0, 0, new Direction(FROM.left, 0), new ArrayList<>()));
+        q.add(new Cell(0, 0, new Direction(FROM.left, 0)));
         costs.get(0).get(0).put(new Direction(FROM.left, 0), 0);
 
         while (!q.isEmpty()) {
@@ -67,7 +67,7 @@ public class Solution {
                 .toArray(int[][]::new);
     }
 
-    record Cell(int i, int j, Direction dir, List<Cell> trail) {
+    record Cell(int i, int j, Direction dir) {
         List<Cell> neighbours(int maxI, int maxJ) {
             return Stream.of(up(), down(maxI), left(), right(maxJ))
                     .filter(Optional::isPresent)
@@ -76,39 +76,31 @@ public class Solution {
         }
 
         Optional<Cell> up() {
-            if (i == 0 || dir.from == FROM.top || (dir.from == FROM.bottom && dir.consecutive == 3)) return Optional.empty();
-            else {
-                var as = new ArrayList<>(trail);
-                as.add(this);
-                return Optional.of(new Cell(i - 1, j, new Direction(FROM.bottom, dir.from == FROM.bottom ? dir.consecutive + 1 : 1), as));
-            }
+            if (i == 0 || dir.from == FROM.top || (dir.from == FROM.bottom && dir.consecutive == 3))
+                return Optional.empty();
+            else
+                return Optional.of(new Cell(i - 1, j, new Direction(FROM.bottom, dir.from == FROM.bottom ? dir.consecutive + 1 : 1)));
         }
 
         Optional<Cell> down(int maxI) {
-            if (i == maxI || dir.from == FROM.bottom || (dir.from == FROM.top && dir.consecutive == 3)) return Optional.empty();
-            else {
-                var as = new ArrayList<>(trail);
-                as.add(this);
-                return Optional.of(new Cell(i + 1, j, new Direction(FROM.top, dir.from == FROM.top ? dir.consecutive + 1 : 1), as));
-            }
+            if (i == maxI || dir.from == FROM.bottom || (dir.from == FROM.top && dir.consecutive == 3))
+                return Optional.empty();
+            else
+                return Optional.of(new Cell(i + 1, j, new Direction(FROM.top, dir.from == FROM.top ? dir.consecutive + 1 : 1)));
         }
 
         Optional<Cell> left() {
-            if (j == 0 || dir.from == FROM.left || (dir.from == FROM.right && dir.consecutive == 3)) return Optional.empty();
-            else {
-                var as = new ArrayList<>(trail);
-                as.add(this);
-                return Optional.of(new Cell(i, j - 1, new Direction(FROM.right, dir.from == FROM.right ? dir.consecutive + 1 : 1), as));
-            }
+            if (j == 0 || dir.from == FROM.left || (dir.from == FROM.right && dir.consecutive == 3))
+                return Optional.empty();
+            else
+                return Optional.of(new Cell(i, j - 1, new Direction(FROM.right, dir.from == FROM.right ? dir.consecutive + 1 : 1)));
         }
 
         Optional<Cell> right(int maxJ) {
-            if (j == maxJ || dir.from == FROM.right || (dir.from == FROM.left && dir.consecutive == 3)) return Optional.empty();
-            else {
-                var as = new ArrayList<>(trail);
-                as.add(this);
-                return Optional.of(new Cell(i, j + 1, new Direction(FROM.left, dir.from == FROM.left ? dir.consecutive + 1 : 1), as));
-            }
+            if (j == maxJ || dir.from == FROM.right || (dir.from == FROM.left && dir.consecutive == 3))
+                return Optional.empty();
+            else
+                return Optional.of(new Cell(i, j + 1, new Direction(FROM.left, dir.from == FROM.left ? dir.consecutive + 1 : 1)));
         }
 
         @Override
