@@ -30,8 +30,8 @@ public class Solution {
 
     static int part1(String path) throws IOException {
         var grid = input(path);
-        var costs = new ArrayList<List<Map<Direction, Integer>>>();
 
+        var costs = new ArrayList<List<Map<Direction, Integer>>>();
         for (int i = 0; i < grid.length; i++) {
             costs.add(new ArrayList<>());
             for (int j = 0; j < grid[0].length; j++) {
@@ -101,16 +101,6 @@ public class Solution {
                 return Optional.empty();
             else
                 return Optional.of(new Cell(i, j + 1, new Direction(FROM.left, dir.from == FROM.left ? dir.consecutive + 1 : 1)));
-        }
-
-        @Override
-        public String toString() {
-            return "Cell{" +
-                    "i=" + i +
-                    ", j=" + j +
-                    ", from=" + dir.from +
-                    ", consecutive=" + dir.consecutive +
-                    '}';
         }
     }
 
