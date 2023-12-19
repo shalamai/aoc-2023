@@ -19,33 +19,36 @@ public class Solution {
         var size = borderSize(border);
         var gridI = size[1] - size[0] + 1 + 2;
         var gridJ = size[3] - size[2] + 1 + 2;
-        var grid = new int[gridI][gridJ];
+        var grid = new long[(int) gridI][(int) gridJ];
 
-        for (int[] coord : border) grid[coord[0] - size[0] + 1][coord[1] - size[2] + 1] = 1;
+        for (long[] coord : border) grid[(int) (coord[0] - size[0] + 1)][(int) (coord[1] - size[2] + 1)] = 1;
         fillExternalSpace(grid);
 
         return internalSpace(grid);
     }
 
-    static List<String[]> input(String path) throws IOException {
-        return Files.readAllLines(Path.of(path)).stream().map(line -> line.split(" ")).toList();
+    static List<Instruction> input(String path) throws IOException {
+        return Files.readAllLines(Path.of(path)).stream().map(line -> {
+            var parts = line.split(" ");
+            return new Instruction(parts[0], Integer.parseInt(parts[1]));
+        }).toList();
     }
 
-    static List<int[]> border(List<String[]> instructions) {
-        var res = new ArrayList<int[]>();
-        var cur = new int[]{0, 0};
+    static List<long[]> border(List<Instruction> instructions) {
+        var res = new ArrayList<long[]>();
+        var cur = new long[]{0, 0};
         res.add(cur);
-        for (String[] instr : instructions) {
+        for (var instr : instructions) {
             var cur2 = cur;
-            var next = switch (instr[0]) {
+            var next = switch (instr.dir) {
                 case "U" ->
-                        IntStream.rangeClosed(1, Integer.parseInt(instr[1])).boxed().map(i -> new int[]{cur2[0] - i, cur2[1]}).toList();
+                        IntStream.rangeClosed(1, instr.steps).boxed().map(i -> new long[]{cur2[0] - i, cur2[1]}).toList();
                 case "D" ->
-                        IntStream.rangeClosed(1, Integer.parseInt(instr[1])).boxed().map(i -> new int[]{cur2[0] + i, cur2[1]}).toList();
+                        IntStream.rangeClosed(1, instr.steps).boxed().map(i -> new long[]{cur2[0] + i, cur2[1]}).toList();
                 case "L" ->
-                        IntStream.rangeClosed(1, Integer.parseInt(instr[1])).boxed().map(i -> new int[]{cur2[0], cur2[1] - i}).toList();
+                        IntStream.rangeClosed(1, instr.steps).boxed().map(i -> new long[]{cur2[0], cur2[1] - i}).toList();
                 case "R" ->
-                        IntStream.rangeClosed(1, Integer.parseInt(instr[1])).boxed().map(i -> new int[]{cur2[0], cur2[1] + i}).toList();
+                        IntStream.rangeClosed(1, instr.steps).boxed().map(i -> new long[]{cur2[0], cur2[1] + i}).toList();
                 default -> throw new Error("unknown direction");
             };
             res.addAll(next);
@@ -55,16 +58,16 @@ public class Solution {
         return res;
     }
 
-    static int[] borderSize(List<int[]> border) {
-        return new int[]{
-                border.stream().map(a -> a[0]).min(Integer::compareTo).get(),
-                border.stream().map(a -> a[0]).max(Integer::compareTo).get(),
-                border.stream().map(a -> a[1]).min(Integer::compareTo).get(),
-                border.stream().map(a -> a[1]).max(Integer::compareTo).get()
+    static long[] borderSize(List<long[]> border) {
+        return new long[]{
+                border.stream().map(a -> a[0]).min(Long::compareTo).get(),
+                border.stream().map(a -> a[0]).max(Long::compareTo).get(),
+                border.stream().map(a -> a[1]).min(Long::compareTo).get(),
+                border.stream().map(a -> a[1]).max(Long::compareTo).get()
         };
     }
 
-    static void fillExternalSpace(int[][] grid) {
+    static void fillExternalSpace(long[][] grid) {
         Queue<int[]> q = new LinkedList<>();
         q.add(new int[]{0, 0});
 
@@ -83,7 +86,7 @@ public class Solution {
         }
     }
 
-    static int internalSpace(int[][] grid) {
+    static int internalSpace(long[][] grid) {
         int acc = 0;
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid[0].length; j++) {
@@ -92,5 +95,8 @@ public class Solution {
         }
 
         return acc;
+    }
+
+    record Instruction(String dir, int steps) {
     }
 }
