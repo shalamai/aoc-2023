@@ -11,6 +11,9 @@ public class Solution {
     public static void main(String[] args) throws IOException {
         var res1 = part1("./src/day19/input.txt");
         System.out.println(res1);
+
+        var res2 = part2("./src/day19/input.txt");
+        System.out.println(res2);
     }
 
     static int part1(String path) throws IOException {
@@ -20,6 +23,45 @@ public class Solution {
         int acc = 0;
         for (var part : parts)
             if (isAccepted(part, workflows)) acc += part.total();
+
+        return acc;
+    }
+
+    static long part2(String path) throws IOException {
+        var workflows = parseWorkflows(path);
+
+        Queue<WorkflowParts> q = new LinkedList<>();
+        q.add(new WorkflowParts("in", new PartsRange(Map.of(
+                Rating.x, new Range(1, 4000),
+                Rating.m, new Range(1, 4000),
+                Rating.a, new Range(1, 4000),
+                Rating.s, new Range(1, 4000)
+        ))));
+
+        var acc = 0L;
+        while (!q.isEmpty()) {
+            var wp = q.poll();
+
+            if (wp.workflow.equals("R")) continue;
+            if (wp.workflow.equals("A")) {
+                acc += wp.parts.total();
+                continue;
+            }
+
+            var parts = Optional.of(wp.parts);
+            var workflow = workflows.get(wp.workflow);
+
+            for (var rule : workflow.rules) {
+                if (parts.isEmpty()) break;
+                var dividedParts = parts.get().divide(rule);
+                if (dividedParts.get(0).isPresent())
+                    q.add(new WorkflowParts(rule.dst, dividedParts.get(0).get()));
+
+                parts = dividedParts.get(1);
+            }
+
+            parts.ifPresent(partsRange -> q.add(new WorkflowParts(workflow.fallback, partsRange)));
+        }
 
         return acc;
     }
@@ -107,6 +149,44 @@ public class Solution {
         }
     }
 
+    record PartsRange(Map<Rating, Range> ratings) {
+
+        List<Optional<PartsRange>> divide(Rule rule) {
+            var range = this.ratings.get(rule.rating);
+            if (rule.val >= range.from && rule.val <= range.to) {
+                var match = new HashMap<>(this.ratings());
+                var miss = new HashMap<>(this.ratings());
+                var splitRange = range.split(rule.val, rule.op);
+                match.put(rule.rating, splitRange.get(0));
+                miss.put(rule.rating, splitRange.get(1));
+                return List.of(Optional.of(new PartsRange(match)), Optional.of(new PartsRange(miss)));
+            } else if (range.matches(rule.val, rule.op)) return List.of(Optional.of(this), Optional.empty());
+            else return List.of(Optional.empty(), Optional.of(this));
+        }
+
+        long total() {
+            return ratings.values().stream()
+                    .map(r -> r.to - r.from + 1L)
+                    .reduce((a, b) -> a * b)
+                    .get();
+        }
+    }
+
+    record Range(int from, int to) {
+        List<Range> split(int val, Operator op) {
+            if (op == Operator.less)
+                return List.of(new Range(from, val - 1), new Range(val, to));
+            else
+                return List.of(new Range(val + 1, to), new Range(from, val));
+        }
+
+        boolean matches(int val, Operator op) {
+            return (op == Operator.less && to < val) || (op == Operator.more && from > val);
+        }
+    }
+
+    record WorkflowParts(String workflow, PartsRange parts) {
+    }
 
     record Workflow(List<Rule> rules, String fallback) {
     }
