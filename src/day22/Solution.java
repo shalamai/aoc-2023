@@ -10,12 +10,15 @@ public class Solution {
     public static void main(String[] args) throws IOException {
         var res1 = part1("./src/day22/input.txt");
         System.out.println(res1);
+
+        var res2 = part2("./src/day22/input.txt");
+        System.out.println(res2);
     }
 
     static int part1(String path) throws IOException {
         var bricks = input(path);
         bricks = land(bricks);
-        link(bricks);
+        linkUnder(bricks);
 
         int acc = 0;
         for (var brick : bricks)
@@ -24,11 +27,24 @@ public class Solution {
         return acc;
     }
 
+    static int part2(String path) throws IOException {
+        var bricks = input(path);
+        bricks = land(bricks);
+        linkUnder(bricks);
+        linkTopFromUnder(bricks);
+
+        var acc = 0;
+        for (var brick : bricks)
+            acc += criticalFor(brick);
+
+        return acc;
+    }
+
     static List<Brick> input(String path) throws IOException {
         return Files.readAllLines(Path.of(path)).stream()
                 .map(l -> {
                     var parts = l.split("~");
-                    return new Brick(parseCoord(parts[0]), parseCoord(parts[1]), new ArrayList<>());
+                    return new Brick(parseCoord(parts[0]), parseCoord(parts[1]), new ArrayList<>(), new ArrayList<>());
                 })
                 .toList();
     }
@@ -53,7 +69,7 @@ public class Solution {
         return res;
     }
 
-    static void link(List<Brick> bricks) {
+    static void linkUnder(List<Brick> bricks) {
         for (Brick brick : bricks) {
             if (brick.from.z == 1) continue;
             var under = bricks.stream()
@@ -61,12 +77,43 @@ public class Solution {
                     .filter(b -> isXYIntersection(b, brick.shiftDown()))
                     .toList();
 
-            brick.underBricks.addAll(under);
+            brick.under.addAll(under);
         }
     }
 
+    static void linkTopFromUnder(List<Brick> bricks) {
+        for (var brick : bricks) {
+            brick.top.addAll(bricks.stream().filter(b -> b.under.contains(brick)).toList());
+        }
+    }
+
+    static int criticalFor(Brick brick0) {
+        Queue<Brick> q = new LinkedList<>();
+        q.add(brick0);
+        var removed = new HashSet<Brick>();
+        removed.add(brick0);
+
+        while (!q.isEmpty()) {
+            var brick = q.poll();
+            var toppled = brick.top
+                    .stream()
+                    .filter(b -> removed.containsAll(b.under))
+                    .toList();
+
+            for (var tb : toppled)
+                if (!removed.contains(tb))
+                    q.add(tb);
+
+            removed.addAll(toppled);
+        }
+
+        removed.remove(brick0);
+
+        return removed.size();
+    }
+
     static boolean canDisintegrate(List<Brick> bricks, Brick brick) {
-        return bricks.stream().filter(b -> b.underBricks.contains(brick)).noneMatch(b -> b.underBricks.size() == 1);
+        return bricks.stream().filter(b -> b.under.contains(brick)).noneMatch(b -> b.under.size() == 1);
     }
 
     static boolean isXYIntersection(Brick a, Brick b) {
@@ -88,16 +135,39 @@ public class Solution {
         Coord shiftDown() {
             return new Coord(x, y, z - 1);
         }
+
+        @Override
+        public String toString() {
+            return "{" + x + ", " + y + ", " + z + "}";
+        }
     }
 
-    record Brick(Coord from, Coord to, List<Brick> underBricks) {
+    record Brick(Coord from, Coord to, List<Brick> under, List<Brick> top) {
 
         boolean canShiftDown() {
             return from.z > 1;
         }
 
         Brick shiftDown() {
-            return new Brick(from.shiftDown(), to.shiftDown(), underBricks);
+            return new Brick(from.shiftDown(), to.shiftDown(), under, top);
+        }
+
+        @Override
+        public String toString() {
+            return "(" + from + "~" + to + ")";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Brick brick = (Brick) o;
+            return Objects.equals(from, brick.from) && Objects.equals(to, brick.to);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(from, to);
         }
     }
 }
